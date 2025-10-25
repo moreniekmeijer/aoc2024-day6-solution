@@ -1,79 +1,78 @@
-
-
-filename = 'input.txt'
-
-
-with open(filename) as f:
-    data = f.read()
-
-
-def solve(data):
+def parse_map(data):
     lines = data.splitlines()
     height = len(lines)
     width = len(lines[0])
 
-    # obstacle/start mapping
     obstacles = set()
     start = None
-    for y in range(height):
-        for x in range(width):
-            if lines[y][x] == '^':
+
+    for y, line in enumerate(lines):
+        for x, char in enumerate(line):
+            if char == '^':
                 start = (x, y)
-            elif lines[y][x] == '#':
+            elif char == '#':
                 obstacles.add((x, y))
 
-    print(f"Start: {start}")
-    print(f"Obstacles: {len(obstacles)} found")
+    return width, height, obstacles, start
 
-    # directions: up, right, down, left (follows path turning right)
+
+def simulate_guard(width, height, obstacles, start):
     directions = [(0, -1), (1, 0), (0, 1), (-1, 0)]
     dir_index = 0
-
     position = start
+
     visited = set()
-    visited.add(position)
+    visited.add(start)
 
     while True:
         dx, dy = directions[dir_index]
         next_pos = (position[0] + dx, position[1] + dy)
 
-        # Check if next position is outside the grid
         if not (0 <= next_pos[0] < width and 0 <= next_pos[1] < height):
             break
 
-        # Check if obstacle ahead
         if next_pos in obstacles:
-            # turn right
             dir_index = (dir_index + 1) % 4
         else:
-            # move forward
             position = next_pos
             visited.add(position)
 
-    print(f"Visited {len(visited)} positions.")
+    return visited
 
-    # Create new map with path
-    output_grid = []
+
+def render_path(width, height, obstacles, start, visited):
+    output_lines = []
     for y in range(height):
-        row = ""
+        row = []
         for x in range(width):
             pos = (x, y)
             if pos == start:
-                row += "S"
+                row.append('S')
             elif pos in obstacles:
-                row += "#"
+                row.append('#')
             elif pos in visited:
-                row += "X"
+                row.append('X')
             else:
-                row += "."
-        output_grid.append(row)
+                row.append('.')
+        output_lines.append(''.join(row))
+    return '\n'.join(output_lines)
 
-    output_text = "\n".join(output_grid)
 
+def solve(data):
+    width, height, obstacles, start = parse_map(data)
+    visited = simulate_guard(width, height, obstacles, start)
+
+    output_text = render_path(width, height, obstacles, start, visited)
     with open('output.txt', 'w') as f:
         f.write(output_text)
 
-    return len(visited)
+    print(f"Start: {start}")
+    print(f"Obstacles: {len(obstacles)}")
+    print(f"Visited: {len(visited)}")
+    print("Output written to output.txt")
 
 
-solve(data)
+if __name__ == "__main__":
+    with open('input.txt') as f:
+        data = f.read()
+    solve(data)
